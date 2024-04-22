@@ -16,7 +16,45 @@ friction_coefficient = 0.60
 particle_mass = 1
 particle_damping = 0.80
 planet_radius = 40
+white = (255,255,255)
 
+maze = [
+    "####################",
+    "#                  #",
+    "#                  #",
+    "#      ########  ###",
+    "#        #         #",
+    "######   #   #######",
+    "#        #         #",
+    "#  #######   #######",
+    "#                  #",
+    "#  ##              #",
+    "#      #######   ###",
+    "#                  #",
+    "####################"
+]
+
+
+CELL_WIDTH = 1920 // len(maze[0])
+CELL_HEIGHT = 1080 // len(maze)
+
+def draw_maze(surface):
+    for y, row in enumerate(maze):
+        for x, cell in enumerate(row):
+            if cell == "#":
+                # Draw top wall
+                if y == 0 or maze[y - 1][x] != "#":
+                    pygame.draw.line(surface, white, (x * CELL_WIDTH, y * CELL_HEIGHT), ((x + 1) * CELL_WIDTH, y * CELL_HEIGHT), 2)
+                # Draw left wall
+                if x == 0 or maze[y][x - 1] != "#":
+                    pygame.draw.line(surface, white, (x * CELL_WIDTH, y * CELL_HEIGHT), (x * CELL_WIDTH, (y + 1) * CELL_HEIGHT), 2)
+                # Draw right wall
+                if x == len(row) - 1 or maze[y][x + 1] != "#":
+                    pygame.draw.line(surface, white, ((x + 1) * CELL_WIDTH, y * CELL_HEIGHT), ((x + 1) * CELL_WIDTH, (y + 1) * CELL_HEIGHT), 2)
+                # Draw bottom wall
+                if y == len(maze) - 1 or maze[y + 1][x] != "#":
+                    pygame.draw.line(surface, white, (x * CELL_WIDTH, (y + 1) * CELL_HEIGHT), ((x + 1) * CELL_WIDTH, (y + 1) * CELL_HEIGHT), 2)
+                    
 class vector():
 
     # constructor
@@ -346,6 +384,7 @@ def draw():
         player.draw()
     planet.radius = planet_radius
     planet.draw()
+    draw_maze(window)
     pygame.display.update()
 
 def draw_text(text, font, color, surface, x, y):
@@ -464,7 +503,6 @@ while run:
         if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
             print("OUT OF BOUNDS")  
 # ===========================================================
-
     draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
         
     mainClock.tick(60)
