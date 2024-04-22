@@ -7,6 +7,10 @@ Created on Wed May  5 14:49:20 2021
 
 import math
 
+import pygame, sys
+from pygame.locals import *
+
+
 c = 0.5*(10)
 gravity_power = 0.5
 particle_color = (255,255,0)
@@ -16,7 +20,7 @@ friction_coefficient = 0.60
 particle_mass = 1
 particle_damping = 0.80
 planet_radius = 40
-white = (255,255,255)
+white = (255, 255, 255)
 
 maze = [
     "####################",
@@ -34,26 +38,41 @@ maze = [
     "####################"
 ]
 
-
 CELL_WIDTH = 1920 // len(maze[0])
 CELL_HEIGHT = 1080 // len(maze)
 
-def draw_maze(surface):
-    for y, row in enumerate(maze):
-        for x, cell in enumerate(row):
-            if cell == "#":
-                # Draw top wall
-                if y == 0 or maze[y - 1][x] != "#":
-                    pygame.draw.line(surface, white, (x * CELL_WIDTH, y * CELL_HEIGHT), ((x + 1) * CELL_WIDTH, y * CELL_HEIGHT), 2)
-                # Draw left wall
-                if x == 0 or maze[y][x - 1] != "#":
-                    pygame.draw.line(surface, white, (x * CELL_WIDTH, y * CELL_HEIGHT), (x * CELL_WIDTH, (y + 1) * CELL_HEIGHT), 2)
-                # Draw right wall
-                if x == len(row) - 1 or maze[y][x + 1] != "#":
-                    pygame.draw.line(surface, white, ((x + 1) * CELL_WIDTH, y * CELL_HEIGHT), ((x + 1) * CELL_WIDTH, (y + 1) * CELL_HEIGHT), 2)
-                # Draw bottom wall
-                if y == len(maze) - 1 or maze[y + 1][x] != "#":
-                    pygame.draw.line(surface, white, (x * CELL_WIDTH, (y + 1) * CELL_HEIGHT), ((x + 1) * CELL_WIDTH, (y + 1) * CELL_HEIGHT), 2)
+class Tile:
+    def __init__(self, x, y, width, height):
+        self.rect = pygame.Rect(x, y, width, height)
+
+    def draw(self, surface, color):
+        pygame.draw.rect(surface, color, self.rect)
+
+def create_grid(tiles, cell_width, cell_height, maze_width, maze_height):
+    grid_width = (maze_width + cell_width - 1) // cell_width
+    grid_height = (maze_height + cell_height - 1) // cell_height
+    grid = [[[] for _ in range(grid_width)] for _ in range(grid_height)]
+    for tile in tiles:
+        tile_x = min(int(tile.rect.x / cell_width), grid_width - 1)
+        tile_y = min(int(tile.rect.y / cell_height), grid_height - 1)
+        grid[tile_y][tile_x].append(tile)
+    return grid
+
+
+def draw_maze(surface, tiles):
+    for tile in tiles:
+        tile.draw(surface, white)
+        
+# Create tiles
+tiles = []
+for y, row in enumerate(maze):
+    for x, cell in enumerate(row):
+        if cell == "#":
+            tiles.append(Tile(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
+
+# Create grid
+grid = create_grid(tiles, CELL_WIDTH, CELL_HEIGHT, len(maze[0]) * CELL_WIDTH, len(maze) * CELL_HEIGHT)
+
                     
 class vector():
 
@@ -288,6 +307,35 @@ class Particle():
             self.pos.y -= overlap * (dy / distance) / 2
             other.pos.x += overlap * (dx / distance) / 2
             other.pos.y += overlap * (dy / distance) / 2
+            
+    def collide_with_tiles(self, tiles, grid, cell_width, cell_height):
+        grid_x = int(self.pos.x / cell_width)
+        grid_y = int(self.pos.y / cell_height)
+
+        for y in range(max(0, grid_y - 1), min(len(grid), grid_y + 2)):
+            for x in range(max(0, grid_x - 1), min(len(grid[0]), grid_x + 2)):
+                cell = grid[y][x]
+                for tile in cell:
+                    if (tile.rect.left <= self.pos.x <= tile.rect.right) and (tile.rect.top <= self.pos.y <= tile.rect.bottom):
+                        self.resolve_collision_with_tile(tile)
+
+    def resolve_collision_with_tile(self, tile):
+        overlap_x = min(abs(self.pos.x - tile.rect.left), abs(self.pos.x - tile.rect.right))
+        overlap_y = min(abs(self.pos.y - tile.rect.top), abs(self.pos.y - tile.rect.bottom))
+
+        if overlap_x < overlap_y:
+            if self.pos.x < tile.rect.centerx:
+                self.pos.x -= overlap_x
+            else:
+                self.pos.x += overlap_x
+            self.vel.x *= -1
+        else:
+            if self.pos.y < tile.rect.centery:
+                self.pos.y -= overlap_y
+            else:
+                self.pos.y += overlap_y
+            self.vel.y *= -1
+
 
 
 class Planet(Particle):
@@ -351,10 +399,6 @@ def calcAccel(radius):
         
         return accel*gravity_power
 
-
-import pygame, sys
-from pygame.locals import *
-
 # window = pygame.display.set_mode((800,800))
 
 window = pygame.display.set_mode((1920,1080), FULLSCREEN)
@@ -366,6 +410,7 @@ pygame.display.set_caption("Simple physics engine   |   By Ross The Boss And Nik
 pygame.init()
 
 mainClock = pygame.time.Clock()
+
 
 # create a player dot
 
@@ -384,7 +429,7 @@ def draw():
         player.draw()
     planet.radius = planet_radius
     planet.draw()
-    draw_maze(window)
+    draw_maze(window, tiles)
     pygame.display.update()
 
 def draw_text(text, font, color, surface, x, y):
@@ -399,7 +444,14 @@ import time
 run = True
 spaceNotClicked = True
 planet = Planet((960, 540))
-  
+
+tiles = []
+for y, row in enumerate(maze):
+    for x, cell in enumerate(row):
+        if cell == "#":
+            tiles.append(Tile(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
+
+
 # Define variable to store previous time
 prev_time = time.time()
                                               
@@ -456,6 +508,7 @@ while run:
     for i, player in enumerate(players):
         
         player.collide_with_planet(planet)
+        player.collide_with_tiles(tiles, grid, CELL_WIDTH, CELL_HEIGHT)
         
         if spaceNotClicked == True:
             player.accel = vector(mpos[0],mpos[1])
