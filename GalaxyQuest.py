@@ -39,13 +39,13 @@ maze = [
     "#                                                              #",
     "#                                                              #",
     "#                                            #######           #",
-    "#                   #######                                    #",
+    "#                   #######        #####                       #",
     "#                                                              #",
     "#                                                              #",
     "#                                                              #",
     "#                                                              #",
     "#      #######                     #######                     #",
-    "#                                                              #",
+    "#                            #####                             #",
     "#                                                              #",
     "#                                                              #",
     "#                                                              #",
@@ -553,35 +553,35 @@ while run:
         for other_player in players[i + 1:]:
             player.collide_with_particle(other_player)
     
-#================= COLLISIONS ==========================
-        if player.pos.x <= 10:
-            if abs(player.vel.x) > 1.6:
-                player.vel = vector(-player.vel.x - 0.5, player.vel.y)
-            else:
-                player.vel = vector(-player.vel.x, player.vel.y)
-            player.pos.x = 12
-        if player.pos.x >= 1900:
-            if abs(player.vel.x) > 1.6:
-                player.vel = vector(-player.vel.x + 0.5, player.vel.y)
-            else:
-                player.vel = vector(-player.vel.x, player.vel.y)
-            player.pos.x = 1898
-        if player.pos.y <= 10:
-            if abs(player.vel.y) > 1.6:
-                player.vel = vector(player.vel.x, -player.vel.y - 0.5)
-            else:
-                player.vel = vector(player.vel.x, -player.vel.y)
-            player.pos.y = 12
-        if player.pos.y >= 1050:
-            if abs(player.vel.y) > 1.6:
-                player.vel = vector(player.vel.x, -player.vel.y + 1)
-            else:
-                player.vel = vector(player.vel.x, -player.vel.y)
-            player.pos.y = 1048
+# #================= COLLISIONS ==========================
+#         if player.pos.x <= 10:
+#             if abs(player.vel.x) > 1.6:
+#                 player.vel = vector(-player.vel.x - 0.5, player.vel.y)
+#             else:
+#                 player.vel = vector(-player.vel.x, player.vel.y)
+#             player.pos.x = 12
+#         if player.pos.x >= 1900:
+#             if abs(player.vel.x) > 1.6:
+#                 player.vel = vector(-player.vel.x + 0.5, player.vel.y)
+#             else:
+#                 player.vel = vector(-player.vel.x, player.vel.y)
+#             player.pos.x = 1898
+#         if player.pos.y <= 10:
+#             if abs(player.vel.y) > 1.6:
+#                 player.vel = vector(player.vel.x, -player.vel.y - 0.5)
+#             else:
+#                 player.vel = vector(player.vel.x, -player.vel.y)
+#             player.pos.y = 12
+#         if player.pos.y >= 1050:
+#             if abs(player.vel.y) > 1.6:
+#                 player.vel = vector(player.vel.x, -player.vel.y + 1)
+#             else:
+#                 player.vel = vector(player.vel.x, -player.vel.y)
+#             player.pos.y = 1048
         
-        if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
-            print("OUT OF BOUNDS")  
-# ===========================================================
+#         if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
+#             print("OUT OF BOUNDS")  
+# # ===========================================================
     draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
         
     mainClock.tick(60)
