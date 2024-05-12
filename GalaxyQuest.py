@@ -39,13 +39,13 @@ maze = [
     "#                                                              #",
     "#                                                              #",
     "#                                            #######           #",
-    "#                   #######        #####                       #",
+    "#                   #######                                    #",
     "#                                                              #",
     "#                                                              #",
     "#                                                              #",
     "#                                                              #",
     "#      #######                     #######                     #",
-    "#                            #####                             #",
+    "#                                                              #",
     "#                                                              #",
     "#                                                              #",
     "#                                                              #",
@@ -183,7 +183,48 @@ class vector():
             self.set_mag(lim)
 
         
+class Meteor:
+    def __init__(self, start_pos):
+        self.pos = vector(start_pos[0], start_pos[1])
+        self.vel = vector(0, 0)
+        self.accel = vector(0, 0)  # Ensure self.accel is initialized
+        self.radius = 20  # Adjust the radius as needed
+        self.fill = (100, 233, 112)  # Adjust the color as needed
+        self.target = None
+        self.speed = 1  # Adjust the speed as needed
+        self.damage = 10  # Adjust the damage as needed
 
+    def update(self, target):
+        self.target = target
+        if self.target:
+            # Calculate direction towards the target
+            direction = vector(self.target.pos.x - self.pos.x, self.target.pos.y - self.pos.y)
+            direction.normalise()
+
+            # Apply acceleration towards the target
+            self.accel = direction.scalar_mult(self.speed)
+
+        # Check if self.accel is None
+        if self.accel:
+            # Update velocity and position
+            self.vel.add(self.accel)
+            self.pos.add(self.vel)
+    def check_collision(self):
+        if self.target:
+            # Calculate distance between meteor and target
+            distance = ((self.pos.x - self.target.pos.x) ** 2 + (self.pos.y - self.target.pos.y) ** 2) ** 0.5
+            combined_radius = self.radius + self.target.radius  # Adjust the radius as needed
+
+            # Check if collision occurred
+            if distance < combined_radius:
+                # Apply damage to the target
+                self.target.health -= self.damage
+                return True
+    def draw(self, surface):
+        
+        pygame.draw.circle(surface, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
+
+        return False
     
 
  
@@ -431,7 +472,7 @@ window = pygame.display.set_mode((1920,1080), FULLSCREEN)
 
 window.fill(BACK_FILL)
 
-pygame.display.set_caption("Simple physics engine   |   By Ross The Boss And Nik The Bik 09 03 2021")
+pygame.display.set_caption("Galaxy Quest")
 
 pygame.init()
 
@@ -488,6 +529,8 @@ while run:
     dt = current_time - prev_time
     prev_time = current_time
     draw()
+
+    
     
     for event in pygame.event.get():    
 
@@ -553,37 +596,38 @@ while run:
         for other_player in players[i + 1:]:
             player.collide_with_particle(other_player)
     
-# #================= COLLISIONS ==========================
-#         if player.pos.x <= 10:
-#             if abs(player.vel.x) > 1.6:
-#                 player.vel = vector(-player.vel.x - 0.5, player.vel.y)
-#             else:
-#                 player.vel = vector(-player.vel.x, player.vel.y)
-#             player.pos.x = 12
-#         if player.pos.x >= 1900:
-#             if abs(player.vel.x) > 1.6:
-#                 player.vel = vector(-player.vel.x + 0.5, player.vel.y)
-#             else:
-#                 player.vel = vector(-player.vel.x, player.vel.y)
-#             player.pos.x = 1898
-#         if player.pos.y <= 10:
-#             if abs(player.vel.y) > 1.6:
-#                 player.vel = vector(player.vel.x, -player.vel.y - 0.5)
-#             else:
-#                 player.vel = vector(player.vel.x, -player.vel.y)
-#             player.pos.y = 12
-#         if player.pos.y >= 1050:
-#             if abs(player.vel.y) > 1.6:
-#                 player.vel = vector(player.vel.x, -player.vel.y + 1)
-#             else:
-#                 player.vel = vector(player.vel.x, -player.vel.y)
-#             player.pos.y = 1048
+#================= COLLISIONS ==========================
+        if player.pos.x <= 10:
+            if abs(player.vel.x) > 1.6:
+                player.vel = vector(-player.vel.x - 0.5, player.vel.y)
+            else:
+                player.vel = vector(-player.vel.x, player.vel.y)
+            player.pos.x = 12
+        if player.pos.x >= 1900:
+            if abs(player.vel.x) > 1.6:
+                player.vel = vector(-player.vel.x + 0.5, player.vel.y)
+            else:
+                player.vel = vector(-player.vel.x, player.vel.y)
+            player.pos.x = 1898
+        if player.pos.y <= 10:
+            if abs(player.vel.y) > 1.6:
+                player.vel = vector(player.vel.x, -player.vel.y - 0.5)
+            else:
+                player.vel = vector(player.vel.x, -player.vel.y)
+            player.pos.y = 12
+        if player.pos.y >= 1050:
+            if abs(player.vel.y) > 1.6:
+                player.vel = vector(player.vel.x, -player.vel.y + 1)
+            else:
+                player.vel = vector(player.vel.x, -player.vel.y)
+            player.pos.y = 1048
         
-#         if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
-#             print("OUT OF BOUNDS")  
-# # ===========================================================
+        if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
+            print("OUT OF BOUNDS")  
+# ===========================================================
+
+   
     draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
         
     mainClock.tick(60)
     
-
