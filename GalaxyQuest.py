@@ -16,11 +16,13 @@ gravity_power = 0.5
 particle_color = (255,255,0)
 planet_color = (255, 0, 0)         
 numberOfParticles = 100
+numberOfMeteors = 10
 friction_coefficient = 0.60
 particle_mass = 1
 particle_damping = 0.80
 planet_radius = 40
 white = (255, 255, 255)
+
 
 maze = [
     "################################################################",
@@ -194,21 +196,15 @@ class Meteor:
         self.speed = 1  # Adjust the speed as needed
         self.damage = 10  # Adjust the damage as needed
 
-    def update(self, target):
-        self.target = target
-        if self.target:
-            # Calculate direction towards the target
-            direction = vector(self.target.pos.x - self.pos.x, self.target.pos.y - self.pos.y)
-            direction.normalise()
 
-            # Apply acceleration towards the target
-            self.accel = direction.scalar_mult(self.speed)
+    def update(self, vel, accel):
 
-        # Check if self.accel is None
-        if self.accel:
-            # Update velocity and position
-            self.vel.add(self.accel)
-            self.pos.add(self.vel)
+        self.vel.add(accel)
+
+        self.vel.limit(c)
+
+        self.pos.add(vel)
+        
     def check_collision(self):
         if self.target:
             # Calculate distance between meteor and target
@@ -220,9 +216,11 @@ class Meteor:
                 # Apply damage to the target
                 self.target.health -= self.damage
                 return True
-    def draw(self, surface):
+    def draw(self):
         
-        pygame.draw.circle(surface, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
+        self.update(self.vel, self.accel)
+        
+        pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
 
         return False
     
@@ -484,7 +482,7 @@ mainClock = pygame.time.Clock()
 import random
 
 players = [Particle((random.randint(0,1800),random.randint(0,1000))) for i in range(numberOfParticles)]
-
+meteors = [Meteor([random.randint(0,1800), random.randint(0,1000)]) for i in range(numberOfMeteors)]
  
 
 def draw():
@@ -492,8 +490,9 @@ def draw():
     window.fill(BACK_FILL)
 
     for player in players:
-
         player.draw()
+    for meteor in meteors:
+        meteor.draw()
     planet.radius = planet_radius
     planet.draw()
     draw_maze(window, tiles)
