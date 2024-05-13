@@ -196,35 +196,46 @@ class Meteor:
         self.speed = 1  # Adjust the speed as needed
         self.damage = 10  # Adjust the damage as needed
 
-    def update(self, planet):
-        # Calculate distance between meteor and planet
-        distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
-        crash_radius = planet.radius + 20  # Adjust the crash radius as needed
+    # def update(self, planet):
+    #     # Calculate distance between meteor and planet
+    #     distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
+    #     crash_radius = planet.radius + 20  # Adjust the crash radius as needed
         
-        if distance < crash_radius:
-            # Handle crash into the planet
-            planet.health -= self.damage
-            return True  # Indicates crash
+    #     if distance < crash_radius:
+    #         # Handle crash into the planet
+    #         planet.health -= self.damage
+    #         return True  # Indicates crash
 
-        if distance < 200:  # Adjust the attraction radius as needed
-            # Calculate direction from meteor to planet
-            direction = vector(planet.pos.x - self.pos.x, planet.pos.y - self.pos.y)
-            direction.normalise()
+    #     if distance < 200:  # Adjust the attraction radius as needed
+    #         # Calculate direction from meteor to planet
+    #         direction = vector(planet.pos.x - self.pos.x, planet.pos.y - self.pos.y)
+    #         direction.normalise()
 
-            # Calculate gravitational attraction force
-            grav_force = direction.scalar_mult(0.1)  # Adjust the gravitational force as needed
+    #         # Calculate gravitational attraction force
+    #         grav_force = direction.scalar_mult(0.1)  # Adjust the gravitational force as needed
 
-            # Apply the gravitational force as acceleration
-            self.accel.add(grav_force)
+    #         # Apply the gravitational force as acceleration
+    #         self.accel.add(grav_force)
 
-        # Update velocity and position
-        self.vel.add(self.accel)
+    #     # Update velocity and position
+    #     self.vel.add(self.accel)
+    #     self.vel.limit(c)
+    #     self.pos.add(self.vel)
+
+    #     return False  # No crash
+    
+    
+    def update(self, vel, accel):
+
+        self.vel.add(accel)
+
         self.vel.limit(c)
-        self.pos.add(self.vel)
 
-        return False  # No crash
+        self.pos.add(vel)
+
 
     def draw(self):
+        self.update(self.vel, self.accel)
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
 
     def collide_with_planet(self, planet):
@@ -597,7 +608,6 @@ while run:
 
     for i, meteor in enumerate(meteors):
         meteor.collide_with_planet(planet)
-    
 
         meteor.accel = vector(mpos[0], mpos[1])
         meteor.accel.sub(meteor.pos)
