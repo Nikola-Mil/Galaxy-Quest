@@ -196,36 +196,47 @@ class Meteor:
         self.speed = 1  # Adjust the speed as needed
         self.damage = 10  # Adjust the damage as needed
 
+    def update(self, planet):
+        # Calculate distance between meteor and planet
+        distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
+        crash_radius = planet.radius + 20  # Adjust the crash radius as needed
+        
+        if distance < crash_radius:
+            # Handle crash into the planet
+            planet.health -= self.damage
+            return True  # Indicates crash
 
-    def update(self, vel, accel):
+        if distance < 200:  # Adjust the attraction radius as needed
+            # Calculate direction from meteor to planet
+            direction = vector(planet.pos.x - self.pos.x, planet.pos.y - self.pos.y)
+            direction.normalise()
 
-        self.vel.add(accel)
+            # Calculate gravitational attraction force
+            grav_force = direction.scalar_mult(0.1)  # Adjust the gravitational force as needed
 
+            # Apply the gravitational force as acceleration
+            self.accel.add(grav_force)
+
+        # Update velocity and position
+        self.vel.add(self.accel)
         self.vel.limit(c)
+        self.pos.add(self.vel)
 
-        self.pos.add(vel)
-        
-    def check_collision(self):
-        if self.target:
-            # Calculate distance between meteor and target
-            distance = ((self.pos.x - self.target.pos.x) ** 2 + (self.pos.y - self.target.pos.y) ** 2) ** 0.5
-            combined_radius = self.radius + self.target.radius  # Adjust the radius as needed
+        return False  # No crash
 
-            # Check if collision occurred
-            if distance < combined_radius:
-                # Apply damage to the target
-                self.target.health -= self.damage
-                return True
     def draw(self):
-        
-        self.update(self.vel, self.accel)
-        
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
 
-        return False
+    def collide_with_planet(self, planet):
+        # Calculate distance between meteor and planet
+        distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
+        combined_radius = self.radius + planet.radius  # Adjust the radius as needed
+        if distance < combined_radius:
+            # Apply damage to the planet
+            planet.health -= self.damage
+            return True
     
 
- 
 
 class Particle():
 
@@ -409,6 +420,15 @@ class Planet(Particle):
         
         self.fill = planet_color
         self.radius = planet_radius
+        self.health = 100  # Initial health value for the planet
+
+    def collide_with_meteor(self, meteor):
+        # Calculate distance between meteor and planet
+        distance = ((self.pos.x - meteor.pos.x) ** 2 + (self.pos.y - meteor.pos.y) ** 2) ** 0.5
+        combined_radius = self.radius + meteor.radius  # Adjust the radius as needed
+        if distance < combined_radius:
+            # Reduce the planet's health upon collision with a meteor
+            self.health -= meteor.damage
 
     def collide_with_particle(self, other):
         dx = other.pos.x - self.pos.x
@@ -492,7 +512,9 @@ def draw():
     for player in players:
         player.draw()
     for meteor in meteors:
+       # print("Before update - Meteor position:", meteor.pos.x, meteor.pos.y)
         meteor.draw()
+       # print("After update - Meteor position:", meteor.pos.x, meteor.pos.y)
     planet.radius = planet_radius
     planet.draw()
     draw_maze(window, tiles)
@@ -572,6 +594,16 @@ while run:
     if planet.pos.y >= 1070:
         planet.vel.y = -planet.vel.y
         planet.pos.y = 1068
+
+    for i, meteor in enumerate(meteors):
+        meteor.collide_with_planet(planet)
+    
+
+        meteor.accel = vector(mpos[0], mpos[1])
+        meteor.accel.sub(meteor.pos)
+        radius = ((abs(meteor.pos.x - mpos[0])) ** 2 + (abs(meteor.pos.y - mpos[1])) ** 2) ** 0.5
+        magnitude = calcAccel(radius)
+        meteor.accel.set_mag(magnitude)
 
     for i, player in enumerate(players):
         
