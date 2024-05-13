@@ -6,10 +6,10 @@ pygame.init()
 SCREEN = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Menu")
 
-BG = pygame.image.load("Galaxy Quest\Menu-System-PyGame-main/assets/wp7872665.png")
+BG = pygame.image.load("GUI/assets/wp7872665.png")
 
 def get_font(size): # Returns Press-Start-2P in the desired size
-    return pygame.font.Font("Galaxy Quest\Menu-System-PyGame-main/assets/font.ttf", size)
+    return pygame.font.Font("GUI/assets/font.ttf", size)
 
 def play():
     while True:
@@ -96,11 +96,11 @@ def main_menu():
         MENU_TEXT = get_font(90).render("Galaxy Quest", True, "#b68f40")
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
 
-        PLAY_BUTTON = Button(image=pygame.image.load("Galaxy Quest\Menu-System-PyGame-main/assets/Novi_play_backround.png"), pos=(640, 250), 
+        PLAY_BUTTON = Button(image=pygame.image.load("GUI/assets/Novi_play_backround.png"), pos=(640, 250), 
                             text_input="PLAY", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
-        OPTIONS_BUTTON = Button(image=pygame.image.load("Galaxy Quest\Menu-System-PyGame-main/assets/Button_Difficulty_Backround.png"), pos=(640, 400), 
+        OPTIONS_BUTTON = Button(image=pygame.image.load("GUI/assets/Button_Difficulty_Backround.png"), pos=(640, 400), 
                             text_input="DIFFICULTY", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
-        QUIT_BUTTON = Button(image=pygame.image.load("Galaxy Quest\Menu-System-PyGame-main/assets/Novi_quit_backround.png"), pos=(640, 550), 
+        QUIT_BUTTON = Button(image=pygame.image.load("GUI/assets/Novi_quit_backround.png"), pos=(640, 550), 
                             text_input="QUIT", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
 
         SCREEN.blit(MENU_TEXT, MENU_RECT)
