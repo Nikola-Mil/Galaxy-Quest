@@ -195,6 +195,7 @@ class Meteor:
         self.target = None
         self.speed = 1  # Adjust the speed as needed
         self.damage = 10  # Adjust the damage as needed
+        self.health = 40
 
     def update(self, vel, accel):
         self.vel.add(accel)
@@ -646,7 +647,10 @@ while run:
     for meteor in meteors[:]:
         for player in players:
             if meteor.collide_with_particle(player):
-                meteors.remove(meteor)
+                meteor.health -= player.vel.get_mag() * 2
+                if meteor.health <= 0:
+                    meteors.remove(meteor)
+                players.remove(player)
                 break
 
     draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
