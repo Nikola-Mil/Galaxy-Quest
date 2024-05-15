@@ -182,11 +182,11 @@ class vector():
 
             self.set_mag(lim)
 
-        
-
     
 
- 
+def clamp(n, minn, maxn):
+    return max(min(maxn, n), minn)
+
 
 class Particle():
 
@@ -333,34 +333,90 @@ class Particle():
             self.pos.y -= overlap * (dy / distance) / 2
             other.pos.x += overlap * (dx / distance) / 2
             other.pos.y += overlap * (dy / distance) / 2
-            
+
     def collide_with_tiles(self, tiles, grid, cell_width, cell_height):
         grid_x = int(self.pos.x / cell_width)
         grid_y = int(self.pos.y / cell_height)
-
-        for y in range(max(0, grid_y - 1), min(len(grid), grid_y + 2)):
-            for x in range(max(0, grid_x - 1), min(len(grid[0]), grid_x + 2)):
-                cell = grid[y][x]
-                for tile in cell:
-                    if (tile.rect.left <= self.pos.x <= tile.rect.right) and (tile.rect.top <= self.pos.y <= tile.rect.bottom):
-                        self.resolve_collision_with_tile(tile)
-
+    
+        # Check for collisions with adjacent tiles
+        for dy in [-1, 0, 1]:
+            for dx in [-1, 0, 1]:
+                x = grid_x + dx
+                y = grid_y + dy
+                if 0 <= x < len(grid[0]) and 0 <= y < len(grid):
+                    cell = grid[y][x]
+                    for tile in cell:
+                        if self.circle_rect_collision(self.pos.x, self.pos.y, 6, tile.rect):
+                            self.resolve_collision_with_tile(tile)
+    
+        # Check for collisions with the current tile
+        for tile in grid[grid_y][grid_x]:
+            if self.circle_rect_collision(self.pos.x, self.pos.y, 6, tile.rect):
+                self.resolve_collision_with_tile(tile)
+    
     def resolve_collision_with_tile(self, tile):
-        overlap_x = min(abs(self.pos.x - tile.rect.left), abs(self.pos.x - tile.rect.right))
-        overlap_y = min(abs(self.pos.y - tile.rect.top), abs(self.pos.y - tile.rect.bottom))
+        closest_x = clamp(self.pos.x, tile.rect.left, tile.rect.right)
+        closest_y = clamp(self.pos.y, tile.rect.top, tile.rect.bottom)
+    
+        # Calculate the vector from the center of the circle to the closest point on the rectangle
+        collision_normal_x = self.pos.x - closest_x
+        collision_normal_y = self.pos.y - closest_y
+    
+        # If the circle is inside the rectangle, move it to the nearest edge
+        if collision_normal_x ** 2 + collision_normal_y ** 2 < 6 ** 2:
+            magnitude = math.sqrt(collision_normal_x ** 2 + collision_normal_y ** 2)
+            if magnitude != 0:
+                collision_normal_x = collision_normal_x / magnitude * 6 
+                collision_normal_y = collision_normal_y / magnitude * 6
+            self.pos.x = closest_x + collision_normal_x
+            self.pos.y = closest_y + collision_normal_y
+            
+            # Move particle slightly further away to avoid detecting collision again
+            epsilon = 0.1
+            self.pos.x += collision_normal_x * epsilon
+            self.pos.y += collision_normal_y * epsilon
+    
+        # Calculate the overlap between the circle and the rectangle
+        overlap = 6 - math.sqrt(collision_normal_x ** 2 + collision_normal_y ** 2)
+    
+        # Resolve the collision by moving the particle away from the tile's edge
+        self.pos.x += collision_normal_x * overlap
+        self.pos.y += collision_normal_y * overlap
+    
+        # Check if the particle is moving away from the tile's surface
+        dot_product = self.vel.x * collision_normal_x + self.vel.y * collision_normal_y
+        if dot_product < 0:
+            # Reflect velocity only if the particle is moving towards the tile's surface
+            self.reflect_velocity(collision_normal_x, collision_normal_y)
+    
+    def reflect_velocity(self, collision_normal_x, collision_normal_y):
+        # Calculate the dot product of velocity and collision normal
+        dot_product = self.vel.x * collision_normal_x + self.vel.y * collision_normal_y
+    
+        # Check if the particle is moving towards the tile's surface
+        if dot_product < 0:
+            # Reflect the velocity vector
+            self.vel.x -= 2 * dot_product * collision_normal_x
+            self.vel.y -= 2 * dot_product * collision_normal_y
+    
+            # Normalize the velocity vector
+            velocity_magnitude = math.sqrt(self.vel.x ** 2 + self.vel.y ** 2)
+            if velocity_magnitude != 0:
+                self.vel.x /= velocity_magnitude
+                self.vel.y /= velocity_magnitude
+        
+    def circle_rect_collision(self, circle_pos_x, circle_pos_y, circle_radius, rect):
+        # Calculate the closest point on the rectangle to the circle's center
+        closest_x = clamp(circle_pos_x, rect.left, rect.right)
+        closest_y = clamp(circle_pos_y, rect.top, rect.bottom)
+    
+        # Calculate the distance between the circle's center and the closest point
+        distance_x = circle_pos_x - closest_x
+        distance_y = circle_pos_y - closest_y
+    
+        # If the distance is less than the circle's radius, there's a collision
+        return (distance_x ** 2 + distance_y ** 2) < (6 ** 2)
 
-        if overlap_x < overlap_y:
-            if self.pos.x < tile.rect.centerx:
-                self.pos.x -= overlap_x
-            else:
-                self.pos.x += overlap_x
-            self.vel.x *= -1
-        else:
-            if self.pos.y < tile.rect.centery:
-                self.pos.y -= overlap_y
-            else:
-                self.pos.y += overlap_y
-            self.vel.y *= -1
 
 
 
@@ -477,6 +533,8 @@ for y, row in enumerate(maze):
         if cell == "#":
             tiles.append(Tile(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
 
+# Hide the mouse cursor
+pygame.mouse.set_visible(False)
 
 # Define variable to store previous time
 prev_time = time.time()
