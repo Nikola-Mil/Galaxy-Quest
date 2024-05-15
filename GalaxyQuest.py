@@ -558,6 +558,8 @@ prev_time = time.time()
 while run:
     if planet.health <= 0:
         run = False
+        pygame.quit()
+        sys.exit()
     # Calculate delta time
     current_time = time.time()
     dt = current_time - prev_time
@@ -643,7 +645,7 @@ while run:
 
         if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
             print("OUT OF BOUNDS")
-#BRUH
+            
     for meteor in meteors[:]:
         for player in players:
             if meteor.collide_with_particle(player):
