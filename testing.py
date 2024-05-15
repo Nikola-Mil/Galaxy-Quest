@@ -1,3 +1,5 @@
+#ovo je samo za testove
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed May  5 14:49:20 2021
@@ -229,131 +231,64 @@ class Meteor:
         self.update(self.vel, self.accel)
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
 
-    def collide_with_planet(self, planet):
-        # Calculate distance between meteor and planet
-        distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
-        combined_radius = self.radius + planet.radius  # Adjust the radius as needed
-        if distance < combined_radius:
-            # Apply damage to the planet
-            planet.health -= self.damage
-            return True
+    
     def collide_with_particle(self, particle):
         distance = ((self.pos.x - particle.pos.x) ** 2 + (self.pos.y - particle.pos.y) ** 2) ** 0.5
         # Adjust the threshold based on your requirements
-        if distance < 10:
+        if particle.shot_by_player and distance < 10:  # Adjust the threshold as needed
             return True
         return False
     
 
 
-class Particle():
-
-    def __init__(self, start_pos):
-
+class Particle:
+    def __init__(self, start_pos, shot_by_player=False):
         self.pos = vector(start_pos[0], start_pos[1])
-
         self.vel = vector(0,0)
-
         self.accel = vector(0,0)
-        
         self.mass = particle_mass
         self.damping_factor = particle_damping
-        
- 
-
-        # create multiple fills
-
-        # r = random.randint(1,2)
-
-        # if r == 1:
-
-        # self.fill = (random.randint(50,255),0,random.randint(50,255))
-        # self.fill = (230,0,0)
-        # self.fill = particle_color
-
-        # else:
-
-        #     self.fill = (0,0,random.randint(100,255))
-
-        
-
+        self.shot_by_player = shot_by_player  # Indicates whether the particle was shot by the player or not
         self.fill = (random.randint(0,255),random.randint(0,255),random.randint(0,255))
-
-        
-
- 
-
     def update(self, vel, accel):
-
         self.vel.add(accel)
-
         self.vel.limit(c)
-
         self.pos.add(vel)
 
-    
-
     def apply(self, force):
-
         self.accel.add(force)
 
-    
-
     def reset_accel(self):
-
         self.accel.x = 0
-
         self.accel.y = 0
 
- 
-
     def reset_vel(self):
-
         self.vel.x = 0
-
         self.vel.y = 0
 
- 
-
     def reset_pos(self):
-
         self.pos.x = 400
-
-        self.pos.y = 400    
-
- 
+        self.pos.y = 400
 
     def draw(self):
-
         self.update(self.vel, self.accel)
-
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), 6)
 
-        # pygame.draw.circle(window, (255,0,0), (int(self.pos.x), int(self.pos.y)), 1)
-        
     def collide_with_planet(self, planet):
-        # Calculate distance between particle and planet
         distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
         combined_radius = 5 + planet.radius  # Adjust the radius as needed
         if distance < combined_radius:
-            # Calculate penetration depth
             overlap = combined_radius - distance
-
-            # Calculate direction from particle to planet
             direction = vector(planet.pos.x - self.pos.x, planet.pos.y - self.pos.y)
             direction.normalise()
-
-            # Move particle away from planet
             self.pos.x -= direction.x * overlap
             self.pos.y -= direction.y * overlap
-
-            # Reflect particle's velocity
             normal = vector(self.pos.x - planet.pos.x, self.pos.y - planet.pos.y)
             normal.normalise()
             dot_product = self.vel.x * normal.x + self.vel.y * normal.y
             self.vel.x -= 2 * dot_product * normal.x
             self.vel.y -= 2 * dot_product * normal.y
-            
+
     def collide_with_particle(self, other):
         dx = other.pos.x - self.pos.x
         dy = other.pos.y - self.pos.y
@@ -362,41 +297,28 @@ class Particle():
             angle = math.atan2(dy, dx)
             sine = math.sin(angle)
             cosine = math.cos(angle)
-
-            # Calculate relative velocity
             rvx = other.vel.x - self.vel.x
             rvy = other.vel.y - self.vel.y
-
-            # Calculate relative velocity in terms of the normal direction
             vel_normal = rvx * cosine + rvy * sine
-
-            # If particles are moving apart, do not collide
             if vel_normal > 0:
                 return
-
-            # Calculate impulse scalar
             e = 0.7  # coefficient of restitution
             j = -(1 + e) * vel_normal
             j /= (1 / self.mass + 1 / other.mass)
-
-            # Apply impulse
             impulse = vector(j * cosine, j * sine)
             self.vel.x -= impulse.x / self.mass
             self.vel.y -= impulse.y / self.mass
             other.vel.x += impulse.x / other.mass
             other.vel.y += impulse.y / other.mass
-
-            # Separate particles to handle overlaps
             overlap = 12 - distance
             self.pos.x -= overlap * (dx / distance) / 2
             self.pos.y -= overlap * (dy / distance) / 2
             other.pos.x += overlap * (dx / distance) / 2
             other.pos.y += overlap * (dy / distance) / 2
-            
+
     def collide_with_tiles(self, tiles, grid, cell_width, cell_height):
         grid_x = int(self.pos.x / cell_width)
         grid_y = int(self.pos.y / cell_height)
-
         for y in range(max(0, grid_y - 1), min(len(grid), grid_y + 2)):
             for x in range(max(0, grid_x - 1), min(len(grid[0]), grid_x + 2)):
                 cell = grid[y][x]
@@ -407,7 +329,6 @@ class Particle():
     def resolve_collision_with_tile(self, tile):
         overlap_x = min(abs(self.pos.x - tile.rect.left), abs(self.pos.x - tile.rect.right))
         overlap_y = min(abs(self.pos.y - tile.rect.top), abs(self.pos.y - tile.rect.bottom))
-
         if overlap_x < overlap_y:
             if self.pos.x < tile.rect.centerx:
                 self.pos.x -= overlap_x
