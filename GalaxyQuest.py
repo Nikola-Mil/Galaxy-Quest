@@ -229,18 +229,14 @@ class Meteor:
         self.update(self.vel, self.accel)
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
 
-    def collide_with_planet(self, planet):
-        # Calculate distance between meteor and planet
-        distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
-        combined_radius = self.radius + planet.radius  # Adjust the radius as needed
-        if distance < combined_radius:
-            # Apply damage to the planet
-            planet.health -= self.damage
-            return True
+
+        
     def collide_with_particle(self, particle):
         distance = ((self.pos.x - particle.pos.x) ** 2 + (self.pos.y - particle.pos.y) ** 2) ** 0.5
+        combined_radius = self.radius + 6  # Adjust the radius as needed
+        
         # Adjust the threshold based on your requirements
-        if distance < 10:
+        if distance < combined_radius:
             return True
         return False
     
