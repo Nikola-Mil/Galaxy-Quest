@@ -467,6 +467,41 @@ class Planet(Particle):
             self.pos.y -= overlap * (dy / distance) / 2 + self.vel.y / 10
             other.pos.x += overlap * (dx / distance) / 2 + other.vel.x / 10
             other.pos.y += overlap * (dy / distance) / 2 + other.vel.y / 10
+                
+    def handle_collision_with_tiles(self, tiles):
+        for tile in tiles:
+            # Calculate the closest point on the perimeter of the tile to the planet's position
+            closest_x = clamp(self.pos.x, tile.rect.left, tile.rect.right)
+            closest_y = clamp(self.pos.y, tile.rect.top, tile.rect.bottom)
+            
+            # Calculate the distance between the planet and the closest point
+            dx = self.pos.x - closest_x
+            dy = self.pos.y - closest_y
+            distance = math.sqrt(dx ** 2 + dy ** 2)
+            
+            # If the distance is less than the planet's radius, adjust the position of the planet
+            if distance < self.radius:
+                if distance == 0:
+                    # Planet is exactly on the perimeter, move it away by a small amount
+                    self.pos.x += 1
+                    self.pos.y += 1
+                else:
+                    # Calculate the overlap distance
+                    overlap = self.radius - distance
+                    
+                    # Move the planet away from the tile along the vector between their centers
+                    self.pos.x += overlap * (dx / distance)
+                    self.pos.y += overlap * (dy / distance)
+
+                    # Check if the planet is still inside the tile
+                    if tile.rect.collidepoint(int(self.pos.x), int(self.pos.y)):
+                        # Move the planet away from the tile based on the direction of the collision vector
+                        self.pos.x += dx / distance
+                        self.pos.y += dy / distance
+
+                        # Ensure the planet remains outside the tile boundaries
+                        self.pos.x = clamp(self.pos.x, tile.rect.left - self.radius, tile.rect.right + self.radius)
+                        self.pos.y = clamp(self.pos.y, tile.rect.top - self.radius, tile.rect.bottom + self.radius)
             
     def draw(self):
         self.update(self.vel, self.accel)
@@ -529,14 +564,8 @@ run = True
 spaceNotClicked = True
 planet = Planet((960, 540))
 
-tiles = []
-for y, row in enumerate(maze):
-    for x, cell in enumerate(row):
-        if cell == "#":
-            tiles.append(Tile(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
-
 # Hide the mouse cursor
-pygame.mouse.set_visible(False)
+pygame.mouse.set_visible(True)
 
 # Define variable to store previous time
 prev_time = time.time()
@@ -575,10 +604,21 @@ while run:
     # Calculate the velocity based on the difference between current and previous cursor positions
     velocity_x = (mpos[0] - planet.pos.x) * drag_factor
     velocity_y = (mpos[1] - planet.pos.y) * drag_factor
-
+    
+    if velocity_x > 5:
+        velocity_x = 5
+    elif velocity_x < -5:
+        velocity_x = -5
+    if velocity_y > 5:
+        velocity_y = 5
+    elif velocity_y < -5:
+        velocity_y = -5
+        
     # Update the position of the planet based on the velocity
     planet.pos.x += velocity_x
     planet.pos.y += velocity_y
+    
+    planet.handle_collision_with_tiles(tiles)
 
           # Handle collision with window boundaries for the single planet
     if planet.pos.x <= 10:
@@ -600,11 +640,11 @@ while run:
         player.collide_with_tiles(tiles, grid, CELL_WIDTH, CELL_HEIGHT)
         
         if spaceNotClicked == True:
-            player.accel = vector(mpos[0],mpos[1])
+            player.accel = vector(planet.pos.x,planet.pos.y)
     
             player.accel.sub(player.pos)
             
-            radius = ((abs(player.pos.x - mpos[0]))**2+(abs(player.pos.y - mpos[1]))**2)**0.5
+            radius = ((abs(player.pos.x - planet.pos.x))**2+(abs(player.pos.y - planet.pos.y))**2)**0.5
             
             magnitude = calcAccel(radius)
     
@@ -616,35 +656,6 @@ while run:
         for other_player in players[i + 1:]:
             player.collide_with_particle(other_player)
     
-# #================= COLLISIONS ==========================
-#         if player.pos.x <= 10:
-#             if abs(player.vel.x) > 1.6:
-#                 player.vel = vector(-player.vel.x - 0.5, player.vel.y)
-#             else:
-#                 player.vel = vector(-player.vel.x, player.vel.y)
-#             player.pos.x = 12
-#         if player.pos.x >= 1900:
-#             if abs(player.vel.x) > 1.6:
-#                 player.vel = vector(-player.vel.x + 0.5, player.vel.y)
-#             else:
-#                 player.vel = vector(-player.vel.x, player.vel.y)
-#             player.pos.x = 1898
-#         if player.pos.y <= 10:
-#             if abs(player.vel.y) > 1.6:
-#                 player.vel = vector(player.vel.x, -player.vel.y - 0.5)
-#             else:
-#                 player.vel = vector(player.vel.x, -player.vel.y)
-#             player.pos.y = 12
-#         if player.pos.y >= 1050:
-#             if abs(player.vel.y) > 1.6:
-#                 player.vel = vector(player.vel.x, -player.vel.y + 1)
-#             else:
-#                 player.vel = vector(player.vel.x, -player.vel.y)
-#             player.pos.y = 1048
-        
-#         if player.pos.x > 2000 or player.pos.x < -20 or player.pos.y > 1100 or player.pos.y < -20:
-#             print("OUT OF BOUNDS")  
-# # ===========================================================
     draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
         
     mainClock.tick(60)
