@@ -21,6 +21,8 @@ particle_mass = 1
 particle_damping = 0.80
 planet_radius = 40
 white = (255, 255, 255)
+drag_factor = 0.05
+planet_velocity = [0, 0]
 
 maze = [
     "################################################################",
@@ -570,10 +572,13 @@ while run:
 
     mpos = pygame.mouse.get_pos()
     
-    # Update the position of the planet to follow the cursor
+    # Calculate the velocity based on the difference between current and previous cursor positions
+    velocity_x = (mpos[0] - planet.pos.x) * drag_factor
+    velocity_y = (mpos[1] - planet.pos.y) * drag_factor
 
-    planet.pos.x = mpos[0]
-    planet.pos.y = mpos[1]
+    # Update the position of the planet based on the velocity
+    planet.pos.x += velocity_x
+    planet.pos.y += velocity_y
 
           # Handle collision with window boundaries for the single planet
     if planet.pos.x <= 10:
