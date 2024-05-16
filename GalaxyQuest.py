@@ -1105,13 +1105,13 @@ def pause():
         SCREEN.fill("black")
 
         PAUSE_TEXT = get_font(100).render("PAUSED", True, "White")
-        PAUSE_RECT = PAUSE_TEXT.get_rect(center=(640, 260))
+        PAUSE_RECT = PAUSE_TEXT.get_rect(center=(960, 400))
         SCREEN.blit(PAUSE_TEXT, PAUSE_RECT)
 
-        PAUSE_RESUME = Button(image=None, pos=(640, 460),
+        PAUSE_RESUME = Button(image=None, pos=(960, 550),
                                 text_input="RESUME", font=get_font(75), base_color="White", hovering_color="Green")
 
-        PAUSE_QUIT = Button(image=None, pos=(640, 560),
+        PAUSE_QUIT = Button(image=None, pos=(960, 650),
                                 text_input="QUIT", font=get_font(75), base_color="White", hovering_color="Red")
 
         PAUSE_RESUME.changeColor(PAUSE_MOUSE_POS)
