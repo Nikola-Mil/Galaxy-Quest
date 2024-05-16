@@ -125,3 +125,63 @@ def main_menu():
         pygame.display.update()
 
 main_menu()
+
+def game_over():
+    while True:
+        GAME_OVER_MOUSE_POS = pygame.mouse.get_pos()
+
+        SCREEN.fill("black")
+
+        GAME_OVER_TEXT = get_font(100).render("GAME OVER", True, "Red")
+        GAME_OVER_RECT = GAME_OVER_TEXT.get_rect(center=(640, 260))
+        SCREEN.blit(GAME_OVER_TEXT, GAME_OVER_RECT)
+
+        GAME_OVER_RETRY = Button(image=None, pos=(640, 460),
+                                text_input="RETRY", font=get_font(75), base_color="White", hovering_color="Green")
+
+        GAME_OVER_RETRY.changeColor(GAME_OVER_MOUSE_POS)
+        GAME_OVER_RETRY.update(SCREEN)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if GAME_OVER_RETRY.checkForInput(GAME_OVER_MOUSE_POS):
+                    play()
+
+        pygame.display.update()
+
+def pause():
+    while True:
+        PAUSE_MOUSE_POS = pygame.mouse.get_pos()
+
+        SCREEN.fill("black")
+
+        PAUSE_TEXT = get_font(100).render("PAUSED", True, "White")
+        PAUSE_RECT = PAUSE_TEXT.get_rect(center=(640, 260))
+        SCREEN.blit(PAUSE_TEXT, PAUSE_RECT)
+
+        PAUSE_RESUME = Button(image=None, pos=(640, 460),
+                                text_input="RESUME", font=get_font(75), base_color="White", hovering_color="Green")
+
+        PAUSE_QUIT = Button(image=None, pos=(640, 560),
+                                text_input="QUIT", font=get_font(75), base_color="White", hovering_color="Red")
+
+        PAUSE_RESUME.changeColor(PAUSE_MOUSE_POS)
+        PAUSE_QUIT.changeColor(PAUSE_MOUSE_POS)
+        PAUSE_RESUME.update(SCREEN)
+        PAUSE_QUIT.update(SCREEN)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if PAUSE_RESUME.checkForInput(PAUSE_MOUSE_POS):
+                    return
+                if PAUSE_QUIT.checkForInput(PAUSE_MOUSE_POS):
+                    pygame.quit()
+                    sys.exit()
+
+        pygame.display.update()
