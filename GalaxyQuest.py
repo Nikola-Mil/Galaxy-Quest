@@ -26,7 +26,7 @@ c = 0.5*(10)
 gravity_power = 0.5
 particle_color = (255,255,0)
 planet_color = (255, 0, 0)         
-numberOfParticles = 25
+numberOfParticles = 20
 numberOfMeteors = 5
 numberOfBosses = 1
 friction_coefficient = 0.60
@@ -338,7 +338,7 @@ class BossEnemy:
         self.accel = vector(0, 0)
         self.radius = 40  # Adjust size as needed
         self.fill = (50, 50, 255)  # Adjust color as needed
-        self.health = 50 # Adjust health as needed
+        self.health = 10 # Adjust health as needed
         self.damage = 100
         self.shoot_interval = 50  # Adjust shooting interval as needed
         self.shoot_timer = self.shoot_interval  # Timer to track shooting intervals
@@ -932,21 +932,18 @@ def game():
                 # Decrease the shoot timer
                 boss.shoot_timer -= 1
             for player in players:
-                if boss.collide_with_particle(player):
-                    boss.health -= player.vel.get_mag() * 2
-                    if boss.health <= 0:
-                        bosses.remove(boss)
-                        fun_fact = random.choice(fun_facts)
-                        # Display the fun fact on the screen
-                        draw_text(fun_fact, pygame.font.SysFont("comicsansms", 15), (0, 255, 0), window, 100, 100)
-                        pygame.display.update()
-                        pygame.time.delay(5000)  # Display the fun fact for 5 seconds before resuming the game loop
-                        bosses.remove(boss)  # Remove the defeated boss from the list
-    
-                        # Pause the game
-                        run = False
-                    players.remove(player)
-                    break
+                if boss:
+                    if boss.collide_with_particle(player):
+                        boss.health -= player.vel.get_mag() * 2
+                        if boss.health <= 0:
+                            bosses.remove(boss)
+                            fun_fact = random.choice(fun_facts)
+                            # Display the fun fact on the screen
+                            draw_text(fun_fact, pygame.font.SysFont("comicsansms", 20), (255, 0, 0), window, 100, 100)
+                            pygame.display.update()
+                            pygame.time.delay(5000)  # Display the fun fact for 5 seconds before resuming the game loop
+                            bosses.remove(boss)  # Remove the defeated boss from the list
+                        players.remove(player)
                     
         draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
         mainClock.tick(60)
