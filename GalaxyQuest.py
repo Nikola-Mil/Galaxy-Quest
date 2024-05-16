@@ -122,7 +122,7 @@ for y, row in enumerate(maze):
 # Create grid
 grid = create_grid(tiles, CELL_WIDTH, CELL_HEIGHT, len(maze[0]) * CELL_WIDTH, len(maze) * CELL_HEIGHT)
 
-                    
+                  
 class vector():
 
     # constructor
@@ -207,8 +207,7 @@ class vector():
 
 def clamp(n, minn, maxn):
     return max(min(maxn, n), minn)
-
-        
+    
 class Meteor:
     def __init__(self, start_pos):
         self.pos = vector(start_pos[0], start_pos[1])
@@ -352,7 +351,7 @@ class BossEnemy:
     def draw(self):
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
 
-    def shoot_bullet(self):
+    def shoot_bullet(self, player):
         # Implement bullet shooting logic here
         bullet_angle = math.atan2(player.pos.y - self.pos.y, player.pos.x - self.pos.x)
         bullet_speed = 5  # Adjust bullet speed as needed
@@ -403,11 +402,7 @@ class BossEnemy:
             return True
         return False
 
-
 boss_enemy = BossEnemy()
-
-
-
 
 class Particle():
 
@@ -608,8 +603,6 @@ class Particle():
         self.pos.x += self.vel.x
         self.pos.y += self.vel.y
 
-
-
 class Planet(Particle):
     def __init__(self, start_pos):
         super().__init__(start_pos)
@@ -705,7 +698,6 @@ class Planet(Particle):
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), planet_radius)  # Increase the radius (e.g., 20)
         
 BACK_FILL = (0,0,0)
-
  
 #Getting Acceleration
 
@@ -726,7 +718,6 @@ pygame.display.set_caption("Galaxy Quest")
 pygame.init()
 
 mainClock = pygame.time.Clock()
-
 
 # create a player dot
 
@@ -832,8 +823,7 @@ def game():
             elif event.type == pygame.KEYDOWN:
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
-                        pygame.quit()
-                        sys.exit()
+                        pause()
                     if event.key == K_SPACE:
                         spaceNotClicked = not spaceNotClicked
                     if event.key == pygame.K_x:
@@ -841,8 +831,6 @@ def game():
                             planet_radius = 120
                         else:
                             planet_radius = 40
-    
-                
     
         # update the accel according to mouse pos
         mpos = pygame.mouse.get_pos()
@@ -935,7 +923,7 @@ def game():
         for boss in bosses[:]:
             if boss.shoot_timer <= 0:
                 # Shoot a bullet
-                new_bullet = boss.shoot_bullet()
+                new_bullet = boss.shoot_bullet(planet)
                 # Add the bullet to the list
                 bullets.append(new_bullet)
                 # Reset the shoot timer
