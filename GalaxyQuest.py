@@ -9,7 +9,17 @@ import math
 
 import pygame, sys
 from pygame.locals import *
+import random
 
+
+fun_facts = [
+    "Fun Fact: Did you know that Jupiter, the largest planet in our solar system, has a giant storm called the Great Red Spot? It's been raging for at least 400 years!",
+    "Space Phenomenon: Quasars are incredibly bright and distant objects in space, powered by supermassive black holes. Some quasars emit as much energy as a trillion stars!",
+    "Fun Fact: Earth is the only known planet where life exists. Its atmosphere, water, and distance from the Sun make it the perfect habitat for diverse forms of life.",
+    "Space Phenomenon: Black holes are regions in space where gravity is so strong that nothing, not even light, can escape. They form when massive stars collapse at the end of their life cycle.",
+    "Fun Fact: Saturn, famous for its beautiful rings, is not the only planet with rings. Jupiter, Uranus, and Neptune also have rings, although they are much fainter and less prominent.",
+    "Space Phenomenon: Meteors, also known as shooting stars, are pieces of rock or metal that burn up upon entering Earth's atmosphere. They create streaks of light that we can see from the ground."
+]
 
 c = 0.5*(10)
 gravity_power = 0.5
@@ -17,6 +27,7 @@ particle_color = (255,255,0)
 planet_color = (255, 0, 0)         
 numberOfParticles = 100
 numberOfMeteors = 10
+numberOfBosses = 1
 friction_coefficient = 0.60
 particle_mass = 1
 particle_damping = 0.80
@@ -24,19 +35,19 @@ planet_radius = 40
 white = (255, 255, 255)
 drag_factor = 0.05
 planet_velocity = [0, 0]
-
+boss_alive = True
 
 maze = [
     "################################################################",
     "#                                                              #",
     "#                                                              #",
-    "#      #####################################            ########",
-    "#        #####                                                 #",
-    "######   #####                                           #######",
-    "#        #                                                     #",
-    "#  #######                                               #######",
+    "#                                                       ########",
+    "#      ##################################                      #",
+    "########                                                       #",
     "#                                                              #",
-    "#  ##                        #######             #######       #",
+    "#                                                        #######",
+    "#                                                              #",
+    "#                            #######             #######       #",
     "#      #######                                               ###",
     "#                                                              #",
     "#                                                              #",
@@ -200,7 +211,7 @@ class Meteor:
         self.target = None
         self.speed = 1  # Adjust the speed as needed
         self.damage = 10  # Adjust the damage as needed
-        self.health = 40
+        self.health = 20
 
     def update(self, vel, accel):
         self.vel.add(accel)
@@ -246,6 +257,99 @@ class Meteor:
             return True
         return False
     
+class Bullet:
+    def __init__(self, pos, angle, speed):
+        self.pos = vector(pos.x, pos.y)
+        self.vel = vector(speed * math.cos(angle), speed * math.sin(angle))
+        self.radius = 10  # Adjust bullet size as needed
+        self.fill = (255, 0, 0)  # Adjust bullet color as needed
+
+    def update(self):
+        # Update bullet position based on velocity
+        self.pos.add(self.vel)
+
+    def draw(self):
+        # Draw the bullet on the screen
+        pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
+
+
+class BossEnemy:
+    def __init__(self):
+        self.pos = vector(1800, 1000)  # Position at the bottom right of the map
+        self.vel = vector(0, 0)
+        self.accel = vector(0, 0)
+        self.radius = 40  # Adjust size as needed
+        self.fill = (50, 50, 255)  # Adjust color as needed
+        self.health = 50 # Adjust health as needed
+        self.damage = 100
+        self.shoot_interval = 50  # Adjust shooting interval as needed
+        self.shoot_timer = self.shoot_interval  # Timer to track shooting intervals
+    
+    def update(self):
+        # Add any update logic here, such as movement or AI behavior
+        self.move_randomly()
+        self.update_bullets()
+        
+    def draw(self):
+        pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
+
+    def shoot_bullet(self):
+        # Implement bullet shooting logic here
+        bullet_angle = math.atan2(player.pos.y - self.pos.y, player.pos.x - self.pos.x)
+        bullet_speed = 5  # Adjust bullet speed as needed
+        bullet = Bullet(self.pos, bullet_angle, bullet_speed)
+        return bullet
+
+    def move_randomly(self):
+        # Move randomly within a certain range
+        if random.randint(0, 100) < 5:  # Adjust probability of changing direction
+            self.accel.x = random.uniform(-1, 1)  # Adjust the range of acceleration
+            self.accel.y = random.uniform(-1, 1)  # Adjust the range of acceleration
+
+        # Update velocity based on acceleration
+        self.vel.add(self.accel)
+
+        # Limit velocity to a maximum value (optional)
+        max_speed = 5  # Adjust maximum speed as needed
+        self.vel.limit(max_speed)
+
+        # Update position based on velocity
+        self.pos.add(self.vel)
+
+        # Reset acceleration
+        self.accel.scalar_mult(0)
+        
+    def update_bullets(self):
+        for bullet in self.bullets[:]:
+            bullet.update()
+            # Remove bullets that are off-screen
+            if bullet.pos.x < 0 or bullet.pos.x > 1920 or bullet.pos.y < 0 or bullet.pos.y > 1080:
+                self.bullets.remove(bullet)
+
+    def collide_with_particle(self, particle):
+        distance = ((self.pos.x - particle.pos.x) ** 2 + (self.pos.y - particle.pos.y) ** 2) ** 0.5
+        combined_radius = self.radius + 6  # Adjust the radius as needed
+        
+        # Adjust the threshold based on your requirements
+        if distance < combined_radius:
+            return True
+        return False
+
+    def collide_with_planet(self, planet):
+        distance = ((self.pos.x - planet.pos.x) ** 2 + (self.pos.y - planet.pos.y) ** 2) ** 0.5
+        combined_radius = self.radius + planet.radius  # Adjust the radius as needed
+        if distance < combined_radius:
+            # Apply damage to the planet
+            planet.health -= self.damage
+            return True
+        return False
+
+
+boss_enemy = BossEnemy()
+
+
+
+
 class Particle():
 
     def __init__(self, start_pos):
@@ -603,7 +707,8 @@ import random
 
 players = [Particle((random.randint(0,1800),random.randint(0,1000))) for i in range(numberOfParticles)]
 meteors = [Meteor([random.randint(0,1800), random.randint(0,1000)]) for i in range(numberOfMeteors)]
- 
+bosses = [BossEnemy() for i in range(numberOfBosses)]
+bullets = []
 
 import math
 import random
@@ -619,6 +724,13 @@ def draw():
         player.draw()
     for meteor in meteors:
         meteor.draw()
+    for boss in bosses:
+        boss_enemy.draw()
+    for bullet in bullets:
+        bullet.update()
+        bullet.draw()
+
+
     planet.radius = planet_radius
     planet.draw()
     draw_maze(window, tiles)
@@ -652,6 +764,7 @@ pygame.mouse.set_visible(True)
 prev_time = time.time()
 
 while run:
+    
     if planet.health <= 0:
         run = False
         pygame.quit()
@@ -677,6 +790,8 @@ while run:
                         planet_radius = 120
                     else:
                         planet_radius = 40
+
+            
 
     # update the accel according to mouse pos
     mpos = pygame.mouse.get_pos()
@@ -724,6 +839,33 @@ while run:
             magnitude = calcAccel(radius)
             meteor.accel.set_mag(magnitude)
 
+    for boss in bosses[:]:
+        if boss.collide_with_planet(planet):
+            bosses.remove(boss)
+        else:
+            boss.accel = vector(mpos[0], mpos[1])
+            boss.accel.sub(boss.pos)
+            radius = ((abs(boss.pos.x - mpos[0])) ** 2 + (abs(boss.pos.y - mpos[1])) ** 2) ** 0.5
+            magnitude = calcAccel(radius)
+            boss.accel.set_mag(magnitude)
+
+    for bullet in bullets[:]:
+        distance = ((bullet.pos.x - planet.pos.x) ** 2 + (bullet.pos.y - planet.pos.y) ** 2) ** 0.5
+        combined_radius = bullet.radius + planet.radius  # Adjust the radius as needed
+        if distance < combined_radius:
+            # Reduce the planet's health upon bullet impact
+            planet.health -= 10  # Adjust the damage as needed
+            # Remove the bullet from the list
+            bullets.remove(bullet)
+        else:
+            bullet.update()
+            bullet.draw()
+    # Check for collisions with enemies or other objects
+    # Remove bullets that are off-screen
+        if bullet.pos.x < 0 or bullet.pos.x > 1920 or bullet.pos.y < 0 or bullet.pos.y > 1080:
+            bullets.remove(bullet)
+    
+
     for i, player in enumerate(players):
         player.collide_with_planet(planet)
         player.collide_with_tiles(tiles, grid, CELL_WIDTH, CELL_HEIGHT)
@@ -751,7 +893,34 @@ while run:
                     meteors.remove(meteor)
                 players.remove(player)
                 break
+    for boss in bosses[:]:
+        if boss.shoot_timer <= 0:
+            # Shoot a bullet
+            new_bullet = boss.shoot_bullet()
+            # Add the bullet to the list
+            bullets.append(new_bullet)
+            # Reset the shoot timer
+            boss.shoot_timer = boss.shoot_interval
+        else:
+            # Decrease the shoot timer
+            boss.shoot_timer -= 1
+        for player in players:
+            if boss.collide_with_particle(player):
+                boss.health -= player.vel.get_mag() * 2
+                if boss.health <= 0:
+                    bosses.remove(boss)
+                    fun_fact = random.choice(fun_facts)
+                    # Display the fun fact on the screen
+                    draw_text(fun_fact, pygame.font.SysFont("comicsansms", 15), (0, 255, 0), window, 100, 100)
+                    pygame.display.update()
+                    pygame.time.delay(5000)  # Display the fun fact for 5 seconds before resuming the game loop
+                    bosses.remove(boss)  # Remove the defeated boss from the list
 
+                    # Pause the game
+                    run = False
+                players.remove(player)
+                break
+                
     draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
     mainClock.tick(60)
     
