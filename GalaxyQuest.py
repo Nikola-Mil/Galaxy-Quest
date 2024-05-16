@@ -25,7 +25,7 @@ c = 0.5*(10)
 gravity_power = 0.5
 particle_color = (255,255,0)
 planet_color = (255, 0, 0)         
-numberOfParticles = 100
+numberOfParticles = 25
 numberOfMeteors = 10
 numberOfBosses = 1
 friction_coefficient = 0.60
@@ -76,15 +76,22 @@ maze = [
     "################################################################"
 ]
 
-# CELL_WIDTH = 1920 // len(maze[0])
-# CELL_HEIGHT = 1080 // len(maze)
-
 CELL_HEIGHT = 30
 CELL_WIDTH = 30
 
 class Tile:
     def __init__(self, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
+        self.left_adjacent = False
+        self.right_adjacent = False
+        self.top_adjacent = False
+        self.bottom_adjacent = False
+        
+    def set_adjacent_tiles(self, left, right, top, bottom):
+        self.left_adjacent = left
+        self.right_adjacent = right
+        self.top_adjacent = top
+        self.bottom_adjacent = bottom
 
     def draw(self, surface, color):
         pygame.draw.rect(surface, color, self.rect)
@@ -271,7 +278,6 @@ class Bullet:
     def draw(self):
         # Draw the bullet on the screen
         pygame.draw.circle(window, self.fill, (int(self.pos.x), int(self.pos.y)), self.radius)
-
 
 class BossEnemy:
     def __init__(self):
@@ -496,90 +502,58 @@ class Particle():
             self.pos.y -= overlap * (dy / distance) / 2
             other.pos.x += overlap * (dx / distance) / 2
             other.pos.y += overlap * (dy / distance) / 2
-
-    def collide_with_tiles(self, tiles, grid, cell_width, cell_height):
-        grid_x = int(self.pos.x / cell_width)
-        grid_y = int(self.pos.y / cell_height)
     
-        # Check for collisions with adjacent tiles
-        for dy in [-1, 0, 1]:
-            for dx in [-1, 0, 1]:
-                x = grid_x + dx
-                y = grid_y + dy
-                if 0 <= x < len(grid[0]) and 0 <= y < len(grid):
-                    cell = grid[y][x]
-                    for tile in cell:
-                        if self.circle_rect_collision(self.pos.x, self.pos.y, 6, tile.rect):
-                            self.resolve_collision_with_tile(tile)
-    
-        # Check for collisions with the current tile
-        for tile in grid[grid_y][grid_x]:
-            if self.circle_rect_collision(self.pos.x, self.pos.y, 6, tile.rect):
+    def detect_and_resolve_collisions(self, tiles):
+        for tile in tiles:
+            if self.collision_with_tile(tile):
                 self.resolve_collision_with_tile(tile)
-    
-    def resolve_collision_with_tile(self, tile):
-        closest_x = clamp(self.pos.x, tile.rect.left, tile.rect.right)
-        closest_y = clamp(self.pos.y, tile.rect.top, tile.rect.bottom)
-    
-        # Calculate the vector from the center of the circle to the closest point on the rectangle
-        collision_normal_x = self.pos.x - closest_x
-        collision_normal_y = self.pos.y - closest_y
-    
-        # If the circle is inside the rectangle, move it to the nearest edge
-        if collision_normal_x ** 2 + collision_normal_y ** 2 < 6 ** 2:
-            magnitude = math.sqrt(collision_normal_x ** 2 + collision_normal_y ** 2)
-            if magnitude != 0:
-                collision_normal_x = collision_normal_x / magnitude * 6 
-                collision_normal_y = collision_normal_y / magnitude * 6
-            self.pos.x = closest_x + collision_normal_x
-            self.pos.y = closest_y + collision_normal_y
-            
-            # Move particle slightly further away to avoid detecting collision again
-            epsilon = 0.1
-            self.pos.x += collision_normal_x * epsilon
-            self.pos.y += collision_normal_y * epsilon
-    
-        # Calculate the overlap between the circle and the rectangle
-        overlap = 6 - math.sqrt(collision_normal_x ** 2 + collision_normal_y ** 2)
-    
-        # Resolve the collision by moving the particle away from the tile's edge
-        self.pos.x += collision_normal_x * overlap
-        self.pos.y += collision_normal_y * overlap
-    
-        # Check if the particle is moving away from the tile's surface
-        dot_product = self.vel.x * collision_normal_x + self.vel.y * collision_normal_y
-        if dot_product < 0:
-            # Reflect velocity only if the particle is moving towards the tile's surface
-            self.reflect_velocity(collision_normal_x, collision_normal_y)
-    
-    def reflect_velocity(self, collision_normal_x, collision_normal_y):
-        # Calculate the dot product of velocity and collision normal
-        dot_product = self.vel.x * collision_normal_x + self.vel.y * collision_normal_y
-    
-        # Check if the particle is moving towards the tile's surface
-        if dot_product < 0:
-            # Reflect the velocity vector
-            self.vel.x -= 2 * dot_product * collision_normal_x
-            self.vel.y -= 2 * dot_product * collision_normal_y
-    
-            # Normalize the velocity vector
-            velocity_magnitude = math.sqrt(self.vel.x ** 2 + self.vel.y ** 2)
-            if velocity_magnitude != 0:
-                self.vel.x /= velocity_magnitude
-                self.vel.y /= velocity_magnitude
-        
-    def circle_rect_collision(self, circle_pos_x, circle_pos_y, circle_radius, rect):
-        # Calculate the closest point on the rectangle to the circle's center
-        closest_x = clamp(circle_pos_x, rect.left, rect.right)
-        closest_y = clamp(circle_pos_y, rect.top, rect.bottom)
-    
-        # Calculate the distance between the circle's center and the closest point
-        distance_x = circle_pos_x - closest_x
-        distance_y = circle_pos_y - closest_y
-    
-        # If the distance is less than the circle's radius, there's a collision
-        return (distance_x ** 2 + distance_y ** 2) < (6 ** 2)
 
+    def collision_with_tile(self, tile):
+        dx = self.pos.x - max(tile.rect.left, min(self.pos.x, tile.rect.right))
+        dy = self.pos.y - max(tile.rect.top, min(self.pos.y, tile.rect.bottom))
+
+        if abs(dx) < 6 and abs(dy) < 6:
+            return True
+        return False
+
+    def resolve_collision_with_tile(self, tile):
+        # Calculate distance between particle center and tile edges
+        dx = self.pos.x + 6 - max(tile.rect.left, min(self.pos.x, tile.rect.right))
+        dy = self.pos.y + 6 - max(tile.rect.top, min(self.pos.y, tile.rect.bottom))
+    
+        # Determine collision side
+        if abs(dx) < abs(dy):
+            # Collided horizontally
+            if dx < 0:
+                # Collided from the left  
+                if tile.right_adjacent:
+                    # Ignore collision if there's a tile on the right
+                    return
+                self.vel.x *= -1  # Reverse horizontal velocity
+            else:
+                # Collided from the right
+                if tile.left_adjacent:
+                    # Ignore collision if there's a tile on the left
+                    return
+                self.vel.x *= -1  # Reverse horizontal velocity
+        else:
+            # Collided vertically
+            if dy < 0:
+                # Collided from the top
+                if tile.bottom_adjacent:
+                    # Ignore collision if there's a tile on the bottom
+                    return
+                self.vel.y *= -1  # Reverse vertical velocity
+            else:
+                # Collided from the bottom
+                if tile.top_adjacent:
+                    # Ignore collision if there's a tile on the top
+                    return
+                self.vel.y *= -1  # Reverse vertical velocity
+    
+        # Move particle to avoid overlap
+        self.pos.x += self.vel.x
+        self.pos.y += self.vel.y
 
 
 
@@ -715,7 +689,31 @@ import random
 import pygame, sys
 from pygame.locals import *
 
-# Existing code...
+count = -1
+while count < len(tiles):
+    for i in range(len(maze)):
+        for j in range(len(maze[0])):
+            if maze[i][j] == "#":
+                count += 1
+                tile = tiles[count]
+            left_adjacent = False
+            right_adjacent = False
+            top_adjacent = False
+            bottom_adjacent = False
+    
+            # Check if there are adjacent tiles to the left, right, top, and bottom
+            if j > 0:
+                left_adjacent = maze[i][j - 1] == "#"
+            if j < len(maze[0]) - 1:
+                right_adjacent = maze[i][j + 1] == "#"
+            if i > 0:
+                top_adjacent = maze[i - 1][j] == "#"
+            if i < len(maze) - 1:
+                bottom_adjacent = maze[i + 1][j] == "#"
+    
+            # Set adjacent tiles for the current tile
+            tile.set_adjacent_tiles(left_adjacent, right_adjacent, top_adjacent, bottom_adjacent)
+    count += 1
 
 def draw():
     window.fill(BACK_FILL)
@@ -754,11 +752,6 @@ planet = Planet((960, 540))
 
 # Hide the mouse cursor
 pygame.mouse.set_visible(True)
-# tiles = []
-# for y, row in enumerate(maze):
-#     for x, cell in enumerate(row):
-#         if cell == "#":
-#             tiles.append(Tile(x * CELL_WIDTH, y * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT))
 
 # Define variable to store previous time
 prev_time = time.time()
@@ -815,27 +808,13 @@ while run:
     
     planet.handle_collision_with_tiles(tiles)
 
-    # Handle collision with window boundaries for the single planet
-    if planet.pos.x <= 10:
-        planet.vel.x = -planet.vel.x
-        planet.pos.x = 12
-    if planet.pos.x >= 1910:
-        planet.vel.x = -planet.vel.x
-        planet.pos.x = 1908
-    if planet.pos.y <= 10:
-        planet.vel.y = -planet.vel.y
-        planet.pos.y = 12
-    if planet.pos.y >= 1070:
-        planet.vel.y = -planet.vel.y
-        planet.pos.y = 1068
-
     for meteor in meteors[:]:
         if meteor.collide_with_planet(planet):
             meteors.remove(meteor)
         else:
-            meteor.accel = vector(mpos[0], mpos[1])
+            meteor.accel = vector(planet.pos.x, planet.pos.y)
             meteor.accel.sub(meteor.pos)
-            radius = ((abs(meteor.pos.x - mpos[0])) ** 2 + (abs(meteor.pos.y - mpos[1])) ** 2) ** 0.5
+            radius = ((abs(meteor.pos.x - planet.pos.x)) ** 2 + (abs(meteor.pos.y - planet.pos.y)) ** 2) ** 0.5
             magnitude = calcAccel(radius)
             meteor.accel.set_mag(magnitude)
 
@@ -868,7 +847,8 @@ while run:
 
     for i, player in enumerate(players):
         player.collide_with_planet(planet)
-        player.collide_with_tiles(tiles, grid, CELL_WIDTH, CELL_HEIGHT)
+        # Check for collisions with tiles
+        player.detect_and_resolve_collisions(tiles)
         
         if spaceNotClicked == True:
             player.accel = vector(planet.pos.x,planet.pos.y)
