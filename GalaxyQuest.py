@@ -264,6 +264,58 @@ class Meteor:
             return True
         return False
     
+    def detect_and_resolve_tile_collision(self, tiles):
+        for tile in tiles:
+            if self.collision_with_tile(tile):
+                self.resolve_collision_with_tile(tile)
+
+    def collision_with_tile(self, tile):
+        dx = self.pos.x - max(tile.rect.left, min(self.pos.x, tile.rect.right))
+        dy = self.pos.y - max(tile.rect.top, min(self.pos.y, tile.rect.bottom))
+
+        if abs(dx) < self.radius and abs(dy) < self.radius:
+            return True
+        return False
+
+    def resolve_collision_with_tile(self, tile):
+        # Calculate distance between particle center and tile edges
+        dx = self.pos.x + self.radius + 10 - max(tile.rect.left, min(self.pos.x, tile.rect.right))
+        dy = self.pos.y + self.radius + 10 - max(tile.rect.top, min(self.pos.y, tile.rect.bottom))
+    
+        # Determine collision side
+        if abs(dx) < abs(dy):
+            # Collided horizontally
+            if dx < 0:
+                # Collided from the left  
+                if tile.right_adjacent:
+                    # Ignore collision if there's a tile on the right
+                    return
+                self.vel.x *= -1  # Reverse horizontal velocity
+            else:
+                # Collided from the right
+                if tile.left_adjacent:
+                    # Ignore collision if there's a tile on the left
+                    return
+                self.vel.x *= -1  # Reverse horizontal velocity
+        else:
+            # Collided vertically
+            if dy < 0:
+                # Collided from the top
+                if tile.bottom_adjacent:
+                    # Ignore collision if there's a tile on the bottom
+                    return
+                self.vel.y *= -1  # Reverse vertical velocity
+            else:
+                # Collided from the bottom
+                if tile.top_adjacent:
+                    # Ignore collision if there's a tile on the top
+                    return
+                self.vel.y *= -1  # Reverse vertical velocity
+    
+        # Move particle to avoid overlap
+        self.pos.x += self.vel.x
+        self.pos.y += self.vel.y
+    
 class Bullet:
     def __init__(self, pos, angle, speed):
         self.pos = vector(pos.x, pos.y)
@@ -503,7 +555,7 @@ class Particle():
             other.pos.x += overlap * (dx / distance) / 2
             other.pos.y += overlap * (dy / distance) / 2
     
-    def detect_and_resolve_collisions(self, tiles):
+    def detect_and_resolve_tile_collision(self, tiles):
         for tile in tiles:
             if self.collision_with_tile(tile):
                 self.resolve_collision_with_tile(tile)
@@ -809,6 +861,7 @@ while run:
     planet.handle_collision_with_tiles(tiles)
 
     for meteor in meteors[:]:
+        meteor.detect_and_resolve_tile_collision(tiles)
         if meteor.collide_with_planet(planet):
             meteors.remove(meteor)
         else:
@@ -848,7 +901,7 @@ while run:
     for i, player in enumerate(players):
         player.collide_with_planet(planet)
         # Check for collisions with tiles
-        player.detect_and_resolve_collisions(tiles)
+        player.detect_and_resolve_tile_collision(tiles)
         
         if spaceNotClicked == True:
             player.accel = vector(planet.pos.x,planet.pos.y)
