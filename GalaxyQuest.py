@@ -1004,19 +1004,19 @@ def options():
         
         SCREEN.blit(BG,(0,0))
 
-        OPTIONS_TEXT = get_font(45).render("Choose Difficulty", True, "White")
-        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(640, 100))
+        OPTIONS_TEXT = get_font(65).render("Choose Difficulty", True, "White")
+        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(960, 370))
         SCREEN.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
-        EASY_BUTTON = Button(image=None, pos=(320, 250), 
-                            text_input="Easy", font=get_font(50), base_color="White", hovering_color="#d7fcd4")
-        NORMAL_BUTTON = Button(image=None, pos=(640, 250), 
-                            text_input="Normal", font=get_font(50), base_color="White", hovering_color="#d7fcd4")
-        HARD_BUTTON = Button(image=None, pos=(960, 250), 
-                            text_input="Hard", font=get_font(50), base_color="White", hovering_color="#d7fcd4")
+        EASY_BUTTON = Button(image=None, pos=(960, 500), 
+                            text_input="Easy", font=get_font(55), base_color="White", hovering_color="#d7fcd4")
+        NORMAL_BUTTON = Button(image=None, pos=(960, 600), 
+                            text_input="Normal", font=get_font(55), base_color="White", hovering_color="#d7fcd4")
+        HARD_BUTTON = Button(image=None, pos=(960, 700), 
+                            text_input="Hard", font=get_font(55), base_color="White", hovering_color="#d7fcd4")
 
 
-        OPTIONS_BACK = Button(image=None, pos=(640, 400), 
+        OPTIONS_BACK = Button(image=None, pos=(960, 850), 
                             text_input="BACK", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
 
         OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
@@ -1054,13 +1054,13 @@ def main_menu():
         MENU_MOUSE_POS = pygame.mouse.get_pos()
 
         MENU_TEXT = get_font(90).render("Galaxy Quest", True, "#b68f40")
-        MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
+        MENU_RECT = MENU_TEXT.get_rect(center=(960, 300))
 
-        PLAY_BUTTON = Button(image=pygame.image.load("assets/Novi_play_backround.png"), pos=(640, 250), 
+        PLAY_BUTTON = Button(image=pygame.image.load("assets/Novi_play_backround.png"), pos=(960, 500), 
                             text_input="PLAY", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
-        OPTIONS_BUTTON = Button(image=pygame.image.load("assets/Button_Difficulty_Backround.png"), pos=(640, 400), 
+        OPTIONS_BUTTON = Button(image=pygame.image.load("assets/Button_Difficulty_Backround.png"), pos=(960, 650), 
                             text_input="DIFFICULTY", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
-        QUIT_BUTTON = Button(image=pygame.image.load("assets/Novi_quit_backround.png"), pos=(640, 550), 
+        QUIT_BUTTON = Button(image=pygame.image.load("assets/Novi_quit_backround.png"), pos=(960, 800), 
                             text_input="QUIT", font=get_font(75), base_color="White", hovering_color="#d7fcd4")
 
         SCREEN.blit(MENU_TEXT, MENU_RECT)
