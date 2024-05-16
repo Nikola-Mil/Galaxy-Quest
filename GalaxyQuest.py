@@ -742,31 +742,6 @@ import random
 import pygame, sys
 from pygame.locals import *
 
-count = -1
-while count < len(tiles):
-    for i in range(len(maze)):
-        for j in range(len(maze[0])):
-            if maze[i][j] == "#":
-                count += 1
-                tile = tiles[count]
-            left_adjacent = False
-            right_adjacent = False
-            top_adjacent = False
-            bottom_adjacent = False
-    
-            # Check if there are adjacent tiles to the left, right, top, and bottom
-            if j > 0:
-                left_adjacent = maze[i][j - 1] == "#"
-            if j < len(maze[0]) - 1:
-                right_adjacent = maze[i][j + 1] == "#"
-            if i > 0:
-                top_adjacent = maze[i - 1][j] == "#"
-            if i < len(maze) - 1:
-                bottom_adjacent = maze[i + 1][j] == "#"
-    
-            # Set adjacent tiles for the current tile
-            tile.set_adjacent_tiles(left_adjacent, right_adjacent, top_adjacent, bottom_adjacent)
-    count += 1
 
 def draw():
     window.fill(BACK_FILL)
@@ -799,166 +774,196 @@ def draw_text(text, font, color, surface, x, y):
 
 import time
 
-run = True
-spaceNotClicked = True
 planet = Planet((960, 540))
 
-# Hide the mouse cursor
-pygame.mouse.set_visible(True)
-
-# Define variable to store previous time
-prev_time = time.time()
-
-while run:
+def game():
     
-    if planet.health <= 0:
-        run = False
-        pygame.quit()
-        sys.exit()
-    # Calculate delta time
-    current_time = time.time()
-    dt = current_time - prev_time
-    prev_time = current_time
-    draw()
+    count = -1
+    while count < len(tiles):
+        for i in range(len(maze)):
+            for j in range(len(maze[0])):
+                if maze[i][j] == "#":
+                    count += 1
+                    tile = tiles[count]
+                left_adjacent = False
+                right_adjacent = False
+                top_adjacent = False
+                bottom_adjacent = False
+        
+                # Check if there are adjacent tiles to the left, right, top, and bottom
+                if j > 0:
+                    left_adjacent = maze[i][j - 1] == "#"
+                if j < len(maze[0]) - 1:
+                    right_adjacent = maze[i][j + 1] == "#"
+                if i > 0:
+                    top_adjacent = maze[i - 1][j] == "#"
+                if i < len(maze) - 1:
+                    bottom_adjacent = maze[i + 1][j] == "#"
+        
+                # Set adjacent tiles for the current tile
+                tile.set_adjacent_tiles(left_adjacent, right_adjacent, top_adjacent, bottom_adjacent)
+        count += 1
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    
+    run = True
+    spaceNotClicked = True
+    # Define variable to store previous time
+    prev_time = time.time()
+    # # Hide the mouse cursor
+    # pygame.mouse.set_visible(False)
+    
+    planet_radius = 40
+    
+    while run:
+        
+        if planet.health <= 0:
             run = False
-        elif event.type == pygame.KEYDOWN:
-            if event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    pygame.quit()
-                    sys.exit()
-                if event.key == K_SPACE:
-                    spaceNotClicked = not spaceNotClicked
-                if event.key == pygame.K_x:
-                    if planet_radius == 40:
-                        planet_radius = 120
-                    else:
-                        planet_radius = 40
-
-            
-
-    # update the accel according to mouse pos
-    mpos = pygame.mouse.get_pos()
+            pygame.quit()
+            sys.exit()
+        # Calculate delta time
+        current_time = time.time()
+        dt = current_time - prev_time
+        prev_time = current_time
+        draw()
     
-    # Calculate the velocity based on the difference between current and previous cursor positions
-    velocity_x = (mpos[0] - planet.pos.x) * drag_factor
-    velocity_y = (mpos[1] - planet.pos.y) * drag_factor
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+            elif event.type == pygame.KEYDOWN:
+                if event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+                    if event.key == K_SPACE:
+                        spaceNotClicked = not spaceNotClicked
+                    if event.key == pygame.K_x:
+                        if planet_radius == 40:
+                            planet_radius = 120
+                        else:
+                            planet_radius = 40
     
-    if velocity_x > 5:
-        velocity_x = 5
-    elif velocity_x < -5:
-        velocity_x = -5
-    if velocity_y > 5:
-        velocity_y = 5
-    elif velocity_y < -5:
-        velocity_y = -5
-        
-    # Update the position of the planet based on the velocity
-    planet.pos.x += velocity_x
-    planet.pos.y += velocity_y
-    
-    planet.handle_collision_with_tiles(tiles)
-
-    for meteor in meteors[:]:
-        meteor.detect_and_resolve_tile_collision(tiles)
-        if meteor.collide_with_planet(planet):
-            meteors.remove(meteor)
-        else:
-            meteor.accel = vector(planet.pos.x, planet.pos.y)
-            meteor.accel.sub(meteor.pos)
-            radius = ((abs(meteor.pos.x - planet.pos.x)) ** 2 + (abs(meteor.pos.y - planet.pos.y)) ** 2) ** 0.5
-            magnitude = calcAccel(radius)
-            meteor.accel.set_mag(magnitude)
-
-    for boss in bosses[:]:
-        if boss.collide_with_planet(planet):
-            bosses.remove(boss)
-        else:
-            boss.accel = vector(mpos[0], mpos[1])
-            boss.accel.sub(boss.pos)
-            radius = ((abs(boss.pos.x - mpos[0])) ** 2 + (abs(boss.pos.y - mpos[1])) ** 2) ** 0.5
-            magnitude = calcAccel(radius)
-            boss.accel.set_mag(magnitude)
-
-    for bullet in bullets[:]:
-        distance = ((bullet.pos.x - planet.pos.x) ** 2 + (bullet.pos.y - planet.pos.y) ** 2) ** 0.5
-        combined_radius = bullet.radius + planet.radius  # Adjust the radius as needed
-        if distance < combined_radius:
-            # Reduce the planet's health upon bullet impact
-            planet.health -= 10  # Adjust the damage as needed
-            # Remove the bullet from the list
-            bullets.remove(bullet)
-        else:
-            bullet.update()
-            bullet.draw()
-    # Check for collisions with enemies or other objects
-    # Remove bullets that are off-screen
-        if bullet.pos.x < 0 or bullet.pos.x > 1920 or bullet.pos.y < 0 or bullet.pos.y > 1080:
-            bullets.remove(bullet)
-    
-
-    for i, player in enumerate(players):
-        player.collide_with_planet(planet)
-        # Check for collisions with tiles
-        player.detect_and_resolve_tile_collision(tiles)
-        
-        if spaceNotClicked == True:
-            player.accel = vector(planet.pos.x,planet.pos.y)
-    
-            player.accel.sub(player.pos)
-            
-            radius = ((abs(player.pos.x - planet.pos.x))**2+(abs(player.pos.y - planet.pos.y))**2)**0.5
-
-            magnitude = calcAccel(radius)
-            player.accel.set_mag(magnitude)
-        else:
-            player.reset_accel()
-        # Check collisions between particles
-        for other_player in players[i + 1:]:
-            player.collide_with_particle(other_player)
-            
-    for meteor in meteors[:]:
-        for player in players:
-            if meteor.collide_with_particle(player):
-                meteor.health -= player.vel.get_mag() * 2
-                if meteor.health <= 0:
-                    meteors.remove(meteor)
-                players.remove(player)
-                break
-    for boss in bosses[:]:
-        if boss.shoot_timer <= 0:
-            # Shoot a bullet
-            new_bullet = boss.shoot_bullet()
-            # Add the bullet to the list
-            bullets.append(new_bullet)
-            # Reset the shoot timer
-            boss.shoot_timer = boss.shoot_interval
-        else:
-            # Decrease the shoot timer
-            boss.shoot_timer -= 1
-        for player in players:
-            if boss.collide_with_particle(player):
-                boss.health -= player.vel.get_mag() * 2
-                if boss.health <= 0:
-                    bosses.remove(boss)
-                    fun_fact = random.choice(fun_facts)
-                    # Display the fun fact on the screen
-                    draw_text(fun_fact, pygame.font.SysFont("comicsansms", 15), (0, 255, 0), window, 100, 100)
-                    pygame.display.update()
-                    pygame.time.delay(5000)  # Display the fun fact for 5 seconds before resuming the game loop
-                    bosses.remove(boss)  # Remove the defeated boss from the list
-
-                    # Pause the game
-                    run = False
-                players.remove(player)
-                break
                 
-    draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
-    mainClock.tick(60)
+    
+        # update the accel according to mouse pos
+        mpos = pygame.mouse.get_pos()
+        
+        # Calculate the velocity based on the difference between current and previous cursor positions
+        velocity_x = (mpos[0] - planet.pos.x) * drag_factor
+        velocity_y = (mpos[1] - planet.pos.y) * drag_factor
+        
+        if velocity_x > 5:
+            velocity_x = 5
+        elif velocity_x < -5:
+            velocity_x = -5
+        if velocity_y > 5:
+            velocity_y = 5
+        elif velocity_y < -5:
+            velocity_y = -5
+            
+        # Update the position of the planet based on the velocity
+        planet.pos.x += velocity_x
+        planet.pos.y += velocity_y
+        
+        planet.handle_collision_with_tiles(tiles)
+    
+        for meteor in meteors[:]:
+            meteor.detect_and_resolve_tile_collision(tiles)
+            if meteor.collide_with_planet(planet):
+                meteors.remove(meteor)
+            else:
+                meteor.accel = vector(planet.pos.x, planet.pos.y)
+                meteor.accel.sub(meteor.pos)
+                radius = ((abs(meteor.pos.x - planet.pos.x)) ** 2 + (abs(meteor.pos.y - planet.pos.y)) ** 2) ** 0.5
+                magnitude = calcAccel(radius)
+                meteor.accel.set_mag(magnitude)
+    
+        for boss in bosses[:]:
+            if boss.collide_with_planet(planet):
+                bosses.remove(boss)
+            else:
+                boss.accel = vector(mpos[0], mpos[1])
+                boss.accel.sub(boss.pos)
+                radius = ((abs(boss.pos.x - mpos[0])) ** 2 + (abs(boss.pos.y - mpos[1])) ** 2) ** 0.5
+                magnitude = calcAccel(radius)
+                boss.accel.set_mag(magnitude)
+    
+        for bullet in bullets[:]:
+            distance = ((bullet.pos.x - planet.pos.x) ** 2 + (bullet.pos.y - planet.pos.y) ** 2) ** 0.5
+            combined_radius = bullet.radius + planet.radius  # Adjust the radius as needed
+            if distance < combined_radius:
+                # Reduce the planet's health upon bullet impact
+                planet.health -= 10  # Adjust the damage as needed
+                # Remove the bullet from the list
+                bullets.remove(bullet)
+            else:
+                bullet.update()
+                bullet.draw()
+        # Check for collisions with enemies or other objects
+        # Remove bullets that are off-screen
+            if bullet.pos.x < 0 or bullet.pos.x > 1920 or bullet.pos.y < 0 or bullet.pos.y > 1080:
+                bullets.remove(bullet)
+        
+    
+        for i, player in enumerate(players):
+            player.collide_with_planet(planet)
+            # Check for collisions with tiles
+            player.detect_and_resolve_tile_collision(tiles)
+            
+            if spaceNotClicked == True:
+                player.accel = vector(planet.pos.x,planet.pos.y)
+        
+                player.accel.sub(player.pos)
+                
+                radius = ((abs(player.pos.x - planet.pos.x))**2+(abs(player.pos.y - planet.pos.y))**2)**0.5
+    
+                magnitude = calcAccel(radius)
+                player.accel.set_mag(magnitude)
+            else:
+                player.reset_accel()
+            # Check collisions between particles
+            for other_player in players[i + 1:]:
+                player.collide_with_particle(other_player)
+                
+        for meteor in meteors[:]:
+            for player in players:
+                if meteor.collide_with_particle(player):
+                    meteor.health -= player.vel.get_mag() * 2
+                    if meteor.health <= 0:
+                        meteors.remove(meteor)
+                    players.remove(player)
+                    break
+        for boss in bosses[:]:
+            if boss.shoot_timer <= 0:
+                # Shoot a bullet
+                new_bullet = boss.shoot_bullet()
+                # Add the bullet to the list
+                bullets.append(new_bullet)
+                # Reset the shoot timer
+                boss.shoot_timer = boss.shoot_interval
+            else:
+                # Decrease the shoot timer
+                boss.shoot_timer -= 1
+            for player in players:
+                if boss.collide_with_particle(player):
+                    boss.health -= player.vel.get_mag() * 2
+                    if boss.health <= 0:
+                        bosses.remove(boss)
+                        fun_fact = random.choice(fun_facts)
+                        # Display the fun fact on the screen
+                        draw_text(fun_fact, pygame.font.SysFont("comicsansms", 15), (0, 255, 0), window, 100, 100)
+                        pygame.display.update()
+                        pygame.time.delay(5000)  # Display the fun fact for 5 seconds before resuming the game loop
+                        bosses.remove(boss)  # Remove the defeated boss from the list
+    
+                        # Pause the game
+                        run = False
+                    players.remove(player)
+                    break
+                    
+        draw_text(str(mainClock.get_fps()), pygame.font.SysFont("comicsansms", 100), (255, 0, 0), window, 0, 0)
+        mainClock.tick(60)
 
-SCREEN = pygame.display.set_mode((1280, 720))
+SCREEN = pygame.display.set_mode((1920, 1080))
 pygame.display.set_caption("Menu")
 
 BG = pygame.image.load("assets/wp7872665.png")
@@ -1070,7 +1075,7 @@ def main_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    play()
+                    game()
                 if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     options()
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
@@ -1078,8 +1083,6 @@ def main_menu():
                     sys.exit()
 
         pygame.display.update()
-
-main_menu()
 
 def game_over():
     while True:
@@ -1141,4 +1144,5 @@ def pause():
 
         pygame.display.update()
 
+main_menu()
     
